@@ -1,0 +1,10 @@
+{
+  "$schema": "https://railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "npm start",
+    "healthcheckPath": "/api/clipper/ping"
+  }
+}

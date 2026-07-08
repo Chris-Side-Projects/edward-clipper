@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+      padding: 16px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .header h1 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .header h1 span { color: #3b82f6; }
+    .status {
+      font-size: 12px;
+      color: #737373;
+      margin-bottom: 12px;
+      min-height: 18px;
+    }
+    .status.success { color: #34d399; }
+    .status.error { color: #f87171; }
+    .status.working { color: #fbbf24; }
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 8px;
+    }
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-primary:disabled {
+      background: #1e3a5f;
+      color: #737373;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: #1a1a1a;
+      color: #a3a3a3;
+      border: 1px solid #333;
+    }
+    .btn-secondary:hover {
+      background: #222;
+      color: white;
+    }
+    .tag-input {
+      width: 100%;
+      padding: 8px 10px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #e5e5e5;
+      font-size: 13px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .tag-input:focus { border-color: #3b82f6; }
+    .tag-input::placeholder { color: #555; }
+    label {
+      display: block;
+      font-size: 11px;
+      color: #737373;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .footer {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #1f1f1f;
+      font-size: 11px;
+      color: #737373;
+    }
+    .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+    .dot.green { background: #34d399; }
+    .dot.red { background: #f87171; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Edward <span>Clipper</span></h1>
+  </div>
+
+  <label>Tag / Note (optional)</label>
+  <input type="text" id="tag" class="tag-input" placeholder="e.g. forge-stripe, meeting-notes..." />
+
+  <button id="captureBtn" class="btn btn-primary">📸 Capture This Page</button>
+  <button id="captureAllBtn" class="btn btn-secondary">📑 Capture All Open Tabs</button>
+  <button id="docSendBtn" class="btn btn-secondary">📄 DocSend Multi-Page</button>
+  <button id="libraryBtn" class="btn btn-secondary">🔗 View Library</button>
+
+  <div id="status" class="status"></div>
+
+  <div class="footer">
+    <span id="connDot" class="dot red"></span>
+    <span id="connStatus">Checking connection...</span>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

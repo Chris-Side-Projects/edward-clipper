@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Edward Clipper",
+  "version": "2.0",
+  "description": "Capture web content with multi-page DocSend support",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://edsnip.com/*",
+    "https://docsend.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

@@ -1,41 +1,36 @@
-# Edward Clipper
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Standalone web clipper app for capturing and archiving web content, extracted from XCAP HQ monorepo.
+## Getting Started
 
-## Features
-
-- 🖼️ **Single & Multi-page Capture**: Screenshots, HTML, PDF generation
-- 📄 **DocSend Support**: Conservative multi-page capture with anti-detection
-- ☁️ **Cloud Storage**: Cloudflare R2 for scalable, global file storage  
-- 🔍 **Searchable Archive**: Postgres-backed clip indexing and metadata
-- 🔐 **Secure Access**: Cloudflare Access authentication
-- 🌐 **Browser Extension**: Chrome extension for easy one-click capture
-
-## Architecture
-
-- **Backend**: Next.js 15 on Railway
-- **Storage**: Cloudflare R2 + Railway Postgres
-- **Frontend**: React clip browsing UI
-- **Extension**: Manifest V3 Chrome extension
-- **Domain**: edsnip.com (pending acquisition)
-
-## Development
+First, run the development server:
 
 ```bash
-# Install dependencies
-npm install
-
-# Run development server
 npm run dev
-
-# Build for production
-npm run build
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-## Deployment
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-Auto-deployed to Railway on push to main branch.
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
----
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-Extracted from XCAP HQ on 2026-07-08. Original clipper by Chris Telles.
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
