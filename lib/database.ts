@@ -1,92 +1,82 @@
-// Database configuration and connection
-import Database from 'better-sqlite3';
-import path from 'path';
+// Temporary file-based database for Railway deployment
+// SQLite requires compilation which fails on Railway's build environment
 
-let db: Database.Database | null = null;
+import fs from 'fs'
+import path from 'path'
 
-export function getDatabase(): Database.Database {
-  if (!db) {
-    const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'clips.db');
-    
-    // Ensure data directory exists
-    const fs = require('fs');
-    const dataDir = path.dirname(dbPath);
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    
-    db = new Database(dbPath);
-    
-    // Initialize schema
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS clips (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        url TEXT NOT NULL,
-        title TEXT,
-        tag TEXT,
-        company TEXT,
-        captured_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        r2_folder TEXT NOT NULL,
-        file_count INTEGER DEFAULT 0,
-        has_screenshot BOOLEAN DEFAULT FALSE,
-        has_html BOOLEAN DEFAULT FALSE,
-        has_pdf BOOLEAN DEFAULT FALSE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-      
-      CREATE INDEX IF NOT EXISTS idx_clips_url ON clips(url);
-      CREATE INDEX IF NOT EXISTS idx_clips_tag ON clips(tag);
-      CREATE INDEX IF NOT EXISTS idx_clips_captured_at ON clips(captured_at);
-    `);
-  }
-  
-  return db;
-}
+const DATA_DIR = process.env.DATA_DIR || './data'
+const CLIPS_FILE = path.join(DATA_DIR, 'clips.json')
 
 export interface ClipRecord {
-  id?: number;
-  url: string;
-  title?: string;
-  tag?: string;
-  company?: string;
-  captured_at: string;
-  r2_folder: string;
-  file_count: number;
-  has_screenshot: boolean;
-  has_html: boolean;
-  has_pdf: boolean;
+  id: string
+  url: string
+  title: string
+  tag?: string
+  company?: string
+  file_path: string
+  created_at: string
 }
 
-export function insertClip(clip: Omit<ClipRecord, 'id'>): number {
-  const db = getDatabase();
-  const stmt = db.prepare(`
-    INSERT INTO clips (url, title, tag, company, captured_at, r2_folder, file_count, has_screenshot, has_html, has_pdf)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  
-  const result = stmt.run(
-    clip.url,
-    clip.title,
-    clip.tag,
-    clip.company,
-    clip.captured_at,
-    clip.r2_folder,
-    clip.file_count,
-    clip.has_screenshot,
-    clip.has_html,
-    clip.has_pdf
-  );
-  
-  return result.lastInsertRowid as number;
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true })
 }
 
-export function getClips(limit: number = 50, offset: number = 0): ClipRecord[] {
-  const db = getDatabase();
-  const stmt = db.prepare(`
-    SELECT * FROM clips 
-    ORDER BY captured_at DESC 
-    LIMIT ? OFFSET ?
-  `);
+// Load clips from JSON file
+function loadClips(): ClipRecord[] {
+  try {
+    if (fs.existsSync(CLIPS_FILE)) {
+      return JSON.parse(fs.readFileSync(CLIPS_FILE, 'utf-8'))
+    }
+  } catch (error) {
+    console.error('Error loading clips:', error)
+  }
+  return []
+}
+
+// Save clips to JSON file
+function saveClips(clips: ClipRecord[]) {
+  try {
+    fs.writeFileSync(CLIPS_FILE, JSON.stringify(clips, null, 2))
+  } catch (error) {
+    console.error('Error saving clips:', error)
+  }
+}
+
+export function initDatabase() {
+  // File-based storage, no initialization needed
+  console.log(`Using file-based clip storage at: ${CLIPS_FILE}`)
+}
+
+export function insertClip(clip: Omit<ClipRecord, 'id' | 'created_at'>): string {
+  const clips = loadClips()
+  const id = Date.now().toString(36) + Math.random().toString(36).substr(2)
+  const newClip: ClipRecord = {
+    ...clip,
+    id,
+    created_at: new Date().toISOString()
+  }
   
-  return stmt.all(limit, offset) as ClipRecord[];
+  clips.push(newClip)
+  saveClips(clips)
+  return id
+}
+
+export function getClips(limit = 50, offset = 0): ClipRecord[] {
+  const clips = loadClips()
+  return clips
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(offset, offset + limit)
+}
+
+export function searchClips(query: string): ClipRecord[] {
+  const clips = loadClips()
+  const lowercaseQuery = query.toLowerCase()
+  
+  return clips.filter(clip => 
+    clip.title.toLowerCase().includes(lowercaseQuery) ||
+    clip.url.toLowerCase().includes(lowercaseQuery) ||
+    clip.tag?.toLowerCase().includes(lowercaseQuery) ||
+    clip.company?.toLowerCase().includes(lowercaseQuery)
+  )
 }
