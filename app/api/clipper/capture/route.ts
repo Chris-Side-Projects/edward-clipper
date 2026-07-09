@@ -18,7 +18,10 @@ export async function POST(req: NextRequest) {
   // Validate API key
   const authKey = req.headers.get('x-clipper-key');
   if (!API_KEY) {
-    return NextResponse.json(\n      { error: 'Clipper disabled: EDWARD_CLIPPER_KEY is not configured' },\n      { status: 503 }\n    );
+    return NextResponse.json(
+      { error: 'Clipper disabled: EDWARD_CLIPPER_KEY is not configured' },
+      { status: 503 }
+    );
   }
   if (authKey !== API_KEY) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -162,14 +165,9 @@ export async function POST(req: NextRequest) {
       insertClip({
         url: url || '',
         title: title || 'Untitled',
-        tag: tag || null,
-        company: null, // Can be extracted later from domain/content
-        captured_at: now.toISOString(),
-        r2_folder: relativePath,
-        file_count: files.length,
-        has_screenshot: !!screenshot,
-        has_html: !!html,
-        has_pdf: files.includes('page.pdf')
+        tag: tag || undefined,
+        company: undefined, // Can be extracted later from domain/content
+        file_path: relativePath
       });
     } catch (dbErr: any) {
       console.error('Database insert error (non-fatal):', dbErr.message);
