@@ -1,5 +1,5 @@
 // Cloudflare R2 storage configuration
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 
 let s3Client: S3Client | null = null;
 
@@ -46,4 +46,30 @@ export async function putObject(
       ContentType: contentType,
     })
   );
+}
+
+export async function getObject(key: string): Promise<Buffer> {
+  const client = getS3Client();
+  const bucket = process.env.EDWARD_CLIPS_BUCKET!;
+  
+  const response = await client.send(
+    new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    })
+  );
+  
+  if (!response.Body) {
+    throw new Error('Object body is empty');
+  }
+  
+  // Convert stream to buffer
+  const chunks: Buffer[] = [];
+  const stream = response.Body as any;
+  
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+    stream.on('error', reject);
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+  });
 }

@@ -69,6 +69,11 @@ export function getClips(limit = 50, offset = 0): ClipRecord[] {
     .slice(offset, offset + limit)
 }
 
+export function getClipById(id: string): ClipRecord | null {
+  const clips = loadClips()
+  return clips.find(clip => clip.id === id) || null
+}
+
 export function searchClips(query: string): ClipRecord[] {
   const clips = loadClips()
   const lowercaseQuery = query.toLowerCase()

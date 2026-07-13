@@ -233,7 +233,7 @@ docSendBtn.addEventListener('click', async () => {
 
 // Library viewer
 libraryBtn.addEventListener('click', () => {
-  chrome.tabs.create({ url: 'https://romantic-passion-production-903c.up.railway.app/clips' });
+  chrome.tabs.create({ url: 'https://edclips.com/clips' });
 });
 
 // DocSend multi-page capture function
