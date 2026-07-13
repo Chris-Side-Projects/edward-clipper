@@ -233,7 +233,7 @@ docSendBtn.addEventListener('click', async () => {
 
 // Library viewer
 libraryBtn.addEventListener('click', () => {
-  chrome.tabs.create({ url: 'https://edsnip.com/clips' });
+  chrome.tabs.create({ url: 'https://romantic-passion-production-903c.up.railway.app/clips' });
 });
 
 // DocSend multi-page capture function
@@ -369,34 +369,74 @@ async function captureDocSendMultiPage(tab) {
   
   setStatus(docSendInfo.message, 'working');
   
-  const allPages = [];
   let pageNumber = 1;
   const maxPages = Math.min(docSendInfo.totalPages || 80, 80); // Respect no session limits
   
-  // Capture each page
+  // Capture each page individually (save immediately)
+  let savedPages = 0;
   while (pageNumber <= maxPages) {
     setStatus(`Capturing page ${pageNumber}/${maxPages}...`, 'working');
     
-    // Extract content and take screenshot
+    // Extract content and take screenshot for this page
     const content = await extractPageContent(tab.id);
     const screenshot = await captureScreenshot();
     
-    allPages.push({
-      page: pageNumber,
-      content,
-      screenshot,
-      capturedAt: new Date().toISOString()
-    });
+    const tag = tagInput.value.trim();
+    const pagePayload = {
+      ...content,
+      tag: tag || `docsend-page-${pageNumber}`,
+      capturedAt: new Date().toISOString(),
+      format: 'docsend-multipage',
+      pageNumber: pageNumber,
+      totalPages: maxPages,
+      screenshot: screenshot
+    };
     
-    if (pageNumber >= maxPages) break;
+    // Save this page immediately
+    try {
+      const r = await fetch(API_BASE + '/capture', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-clipper-key': API_KEY,
+          'CF-Access-Client-Id': CF_CLIENT_ID,
+          'CF-Access-Client-Secret': CF_CLIENT_SECRET,
+        },
+        body: JSON.stringify(pagePayload),
+      });
+
+      if (r.ok) {
+        const data = await r.json();
+        savedPages++;
+        setStatus(`✓ Saved page ${pageNumber}/${maxPages} (${savedPages} total)`, 'working');
+      } else {
+        const err = await r.text();
+        setStatus(`Failed page ${pageNumber}: ${err}`, 'error');
+      }
+    } catch (e) {
+      setStatus(`Network error on page ${pageNumber}: ${e.message}`, 'error');
+    }
+    
+    if (pageNumber >= maxPages) {
+      setStatus(`✓ Completed: Saved ${savedPages}/${maxPages} pages`, 'success');
+      break;
+    }
     
     // Navigate to next page with anti-detection
     const navResult = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => {
         const nextSelectors = [
-          'button[data-testid="next"]', '.next-page', '.arrow-right',
-          'button[aria-label*="next"]', '.next-slide'
+          // DocSend specific selectors (updated for current interface)
+          'button[data-testid="next-page"]',
+          'button[data-testid="next"]', 
+          '[data-testid="page-nav"] button:last-child',
+          '.page-navigation button:last-child',
+          '.navigation-controls button:last-child',
+          'button[aria-label*="Next"]',
+          'button[aria-label*="next"]',
+          // Generic fallbacks
+          '.next-page', '.arrow-right', '.next-slide'
         ];
         
         for (const selector of nextSelectors) {
@@ -425,74 +465,21 @@ async function captureDocSendMultiPage(tab) {
           bubbles: true
         }));
         
-        // Wait and check if page changed
-        setTimeout(() => {
-          const newPageInfo = document.querySelector('.page-counter, .page-number, [data-testid*="page"]');
-          if (newPageInfo) {
-            return { success: true, method: 'keyboard-arrow' };
-          }
-        }, 1000);
-        
-        return { success: false, error: 'No next button found' };
+        // Return success for keyboard attempt (we can't easily verify in sync)
+        return { success: true, method: 'keyboard-arrow' };
       }
     });
     
     if (!navResult[0]?.result?.success) {
-      setStatus(`Captured ${pageNumber} pages (navigation ended)`, 'success');
+      setStatus(`✓ Completed: Saved ${savedPages} pages (navigation ended)`, 'success');
       break;
     }
     
-    // Conservative delay between pages (3-6 seconds + jitter)
-    const delay = 3000 + Math.random() * 3000 + Math.random() * 1000;
+    // Conservative delay between pages (2-4 seconds)
+    const delay = 2000 + Math.random() * 2000;
     await new Promise(resolve => setTimeout(resolve, delay));
     
     pageNumber++;
-  }
-  
-  // Combine all pages into one submission
-  setStatus('Combining pages and uploading...', 'working');
-  
-  const tag = tagInput.value.trim();
-  const firstPage = allPages[0];
-  
-  // Create combined payload
-  const combinedPayload = {
-    ...firstPage.content,
-    tag: tag || 'docsend-multipage',
-    capturedAt: new Date().toISOString(),
-    format: 'multipage',
-    pageCount: allPages.length,
-    pages: allPages.map(p => ({
-      page: p.page,
-      screenshot: p.screenshot,
-      timestamp: p.capturedAt
-    }))
-  };
-  
-  // Use the last screenshot as the primary one (or create a composite)
-  combinedPayload.screenshot = allPages[allPages.length - 1].screenshot;
-  
-  try {
-    const r = await fetch(API_BASE + '/capture', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-clipper-key': API_KEY,
-        'CF-Access-Client-Id': CF_CLIENT_ID,
-        'CF-Access-Client-Secret': CF_CLIENT_SECRET,
-      },
-      body: JSON.stringify(combinedPayload),
-    });
-
-    if (r.ok) {
-      const data = await r.json();
-      setStatus(`✓ Saved ${allPages.length} pages: ${data.path}`, 'success');
-    } else {
-      const err = await r.text();
-      setStatus(`Server error: ${err}`, 'error');
-    }
-  } catch (e) {
-    setStatus(`Network error: ${e.message}`, 'error');
   }
 }
 
