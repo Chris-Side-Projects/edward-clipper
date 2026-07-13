@@ -1,5 +1,5 @@
-// Edward Clipper - popup.js
-const API_BASE = 'https://edsnip.com/api/clipper';
+// Edward Clipper - popup.js  
+const API_BASE = 'https://edward-clipper-production.up.railway.app/api/clipper';
 const API_KEY = 'NMYX51GDjQNzIOK4-Bg1xq-BixPP0OBNjSIt9nCcYI4';
 const CF_CLIENT_ID = '48de711602759a9859d6a741a5237cc6.access';
 const CF_CLIENT_SECRET = '904c7a30e719a36fddacac3680b4de47c4a40b1151f692a517692846f6556a60';

@@ -8,7 +8,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://edsnip.com/*",
+    "https://edward-clipper-production.up.railway.app/*",
     "https://docsend.com/*"
   ],
   "action": {
