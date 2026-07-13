@@ -250,19 +250,32 @@ async function captureDocSendMultiPage(tab) {
       let attempts = 0;
       const maxAttempts = 80; // Support up to 80 pages as requested
       
-      // Try to find page counter
+      // Try to find page counter (DocSend uses "1 / 8" format)
       const pageIndicators = [
         '.page-counter', '.page-number', '[data-testid*="page"]', 
-        '.slide-counter', '[class*="current"]', '[class*="page"]'
+        '.slide-counter', '[class*="current"]', '[class*="page"]',
+        // DocSend specific - look for text containing "/ 8" pattern
+        '*'  // Will search all elements for page pattern
       ];
       
       const nextSelectors = [
-        'button[data-testid="next"]', '.next-page', '.arrow-right',
-        'button:contains("Next")', '[aria-label*="next"]', '.next-slide'
+        // DocSend specific selectors (updated for current interface)
+        'button[data-testid="next-page"]',
+        'button[data-testid="next"]', 
+        '[data-testid="page-nav"] button:last-child',
+        '.page-navigation button:last-child',
+        '.navigation-controls button:last-child',
+        'button[aria-label*="Next"]',
+        'button[aria-label*="next"]',
+        // Generic fallbacks
+        '.next-page', '.arrow-right', '.next-slide',
+        // KeyDown alternative
+        'body' // Will use keyboard navigation as fallback
       ];
       
       function findPageInfo() {
-        for (const selector of pageIndicators) {
+        // First try specific selectors
+        for (const selector of pageIndicators.slice(0, -1)) {
           const elem = document.querySelector(selector);
           if (elem && elem.textContent) {
             const match = elem.textContent.match(/(\d+)\s*(?:\/|of)\s*(\d+)/);
@@ -271,6 +284,28 @@ async function captureDocSendMultiPage(tab) {
             }
           }
         }
+        
+        // DocSend fallback: search all text nodes for "X / Y" pattern
+        const walker = document.createTreeWalker(
+          document.body,
+          NodeFilter.SHOW_TEXT,
+          null,
+          false
+        );
+        
+        let node;
+        while (node = walker.nextNode()) {
+          const text = node.textContent.trim();
+          const match = text.match(/(\d+)\s*\/\s*(\d+)/);
+          if (match) {
+            const current = parseInt(match[1]);
+            const total = parseInt(match[2]);
+            if (current > 0 && total > current) {
+              return { current, total };
+            }
+          }
+        }
+        
         return null;
       }
       
@@ -381,6 +416,23 @@ async function captureDocSendMultiPage(tab) {
             return { success: true, method: selector };
           }
         }
+        
+        // Keyboard navigation fallback (Right Arrow)
+        console.log('Trying keyboard navigation (Right Arrow)');
+        document.dispatchEvent(new KeyboardEvent('keydown', {
+          key: 'ArrowRight',
+          keyCode: 39,
+          bubbles: true
+        }));
+        
+        // Wait and check if page changed
+        setTimeout(() => {
+          const newPageInfo = document.querySelector('.page-counter, .page-number, [data-testid*="page"]');
+          if (newPageInfo) {
+            return { success: true, method: 'keyboard-arrow' };
+          }
+        }, 1000);
+        
         return { success: false, error: 'No next button found' };
       }
     });
