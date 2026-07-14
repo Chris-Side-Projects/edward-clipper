@@ -372,8 +372,10 @@ async function captureDocSendMultiPage(tab) {
   let pageNumber = 1;
   const maxPages = Math.min(docSendInfo.totalPages || 80, 80); // Respect no session limits
   
-  // Capture each page individually (save immediately)
-  let savedPages = 0;
+  // Collect all pages first, then send as batch for PDF combination
+  const allPages = [];
+  let capturedPages = 0;
+  
   while (pageNumber <= maxPages) {
     setStatus(`Capturing page ${pageNumber}/${maxPages}...`, 'working');
     
@@ -381,44 +383,20 @@ async function captureDocSendMultiPage(tab) {
     const content = await extractPageContent(tab.id);
     const screenshot = await captureScreenshot();
     
-    const tag = tagInput.value.trim();
-    const pagePayload = {
+    // Collect page data (don't save yet)
+    const pageData = {
       ...content,
-      tag: tag || `docsend-page-${pageNumber}`,
-      capturedAt: new Date().toISOString(),
-      format: 'docsend-multipage',
       pageNumber: pageNumber,
       totalPages: maxPages,
-      screenshot: screenshot
+      screenshot: screenshot,
+      capturedAt: new Date().toISOString()
     };
     
-    // Save this page immediately
-    try {
-      const r = await fetch(API_BASE + '/capture', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-clipper-key': API_KEY,
-          'CF-Access-Client-Id': CF_CLIENT_ID,
-          'CF-Access-Client-Secret': CF_CLIENT_SECRET,
-        },
-        body: JSON.stringify(pagePayload),
-      });
-
-      if (r.ok) {
-        const data = await r.json();
-        savedPages++;
-        setStatus(`✓ Saved page ${pageNumber}/${maxPages} (${savedPages} total)`, 'working');
-      } else {
-        const err = await r.text();
-        setStatus(`Failed page ${pageNumber}: ${err}`, 'error');
-      }
-    } catch (e) {
-      setStatus(`Network error on page ${pageNumber}: ${e.message}`, 'error');
-    }
+    allPages.push(pageData);
+    capturedPages++;
+    setStatus(`✓ Captured page ${pageNumber}/${maxPages} (${capturedPages} collected)`, 'working');
     
     if (pageNumber >= maxPages) {
-      setStatus(`✓ Completed: Saved ${savedPages}/${maxPages} pages`, 'success');
       break;
     }
     
